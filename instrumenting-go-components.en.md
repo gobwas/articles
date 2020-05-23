@@ -1,7 +1,7 @@
 ---
 title: "Instrumenting Go Components"
 date: 2020-05-23T10:58:54+03:00
-draft: false
+draft: true
 description: ""
 ---
 
@@ -12,15 +12,15 @@ instrumented in a clean and flexible way.
 
 ## TL;DR
 
-Logging, metrics collection and other logic that is not related to main purpose
-of some piece of code, must not appear there. Instead, define some _trace
-points_ that might be useful to be instrumented for a user of your code.
+Logging, metrics collection and anything that is not related to main
+functionality of some code, must not appear within that code. Instead, define
+some _trace points_ of the code that can be instrumented by a user.
 
-That is, logging, metrics collection and others are all subsets of **tracing**.
+That is, logging and metrics collection are subsets of the **tracing**.
 
 ## The problem
 
-Lets assume that we have some package called `lib` and some `lib.Client`
+Let's assume that we have some package called `lib` and some `lib.Client`
 structure which pings its underlying connection every time while making some
 request.
 
@@ -35,7 +35,7 @@ func (c *Client) Request(ctx context.Context) error {
 	if err := c.ping(ctx); err != nil {
 		return err
 	}
-	// Some client logic.
+	// Some logic here.
 }
 
 func (c *Client) ping(ctx context.Context) error {
@@ -90,7 +90,7 @@ func (c *Client) ping(ctx context.Context) (err error) {
 ```
 
 If we continue to add instrumentation methods to our `Client`, we'll realise
-soon that most of its code is related to instrumentation, and not to the main
+soon that most of its code is related to instrumentation and not to the main
 functionality of the `Client` (which was just a single line with `doPing()`
 call).
 
@@ -101,16 +101,17 @@ What if during operations of your program you realise that the metric name, for
 example, is wrong and you should rename it? Or you must use some different
 library for logging? 
 
-With approach above you will go to the implementation of `Client` (and other
-similar components as well) and change it.
+With approach above you will need to go to the implementation of `Client` (and
+other similar components as well) and change it.
 
-It does violate the [SRP
-principle](https://en.wikipedia.org/wiki/Single-responsibility_principle).
+This means that you are going to change code every time when something not
+related to component's _functionality_ changes. In other words such design does
+violate the [SRP principle][wikipedia:srp].
 
 What if you share your code across multiple programms? What if you even don't
 control the consumers of your code at all (and to be honest I suggest to treat
-_every_ package like it is reused by unkonwn number of programms, even if in
-reality its only one that is yours).
+_every_ package as it reused by unknown number of programms, even if in reality
+it is only one that yours).
 
 All of this questions point to a design mistake that we made earlier: 
 
@@ -123,21 +124,21 @@ In my opinion the right way to do it is to define _trace points_ (aka _hooks_)
 which user of your code can then initialize with some function (aka _probe_)
 during runtime. 
 
-This still will add some extra lines to our code for sure, but will also bring
-a flexibility to users to measure our componenet's runtime with any appropriate
+This still will add some extra code lines for sure, but will also bring the
+flexibility to users to measure our componenet's runtime with any appropriate
 method.
 
 Such method is used for example by the standard library's
-[`httptrace`](https://golang.org/pkg/net/http/httptrace/) package. 
+[`httptrace`][go:httptrace] package. 
 
-Lets provide almost the same facility, but with one change. Instead of
-providing `OnPingStart()` and `OnPingDone()` _hooks_, lets introduce a single
-`OnPing()` hook which will be called right before ping, and will return a
+Let's provide almost the same facility, but with one change. Instead of
+providing `OnPingStart()` and `OnPingDone()` _hooks_, let's introduce a single
+`OnPing()` hook which will be called right before ping and will return a
 callback which will be called right after ping. This way we can store some
 variables in closure, to access them when ping completes (e.g. to calculate
-ping latency for example).
+ping latency).
 
-Lets look how our `Client` will change with this approach:
+Let's look how our `Client` will change with this approach:
 
 ```go
 package lib
@@ -172,21 +173,22 @@ func (c *Client) ping(ctx context.Context) (err error) {
 }
 ```
 
-Now it is correct and is till good at flexibility and SRP principle, but not so
-good in code simplicity.
+Now it is correct and is still good at flexibility and SRP principle, but not
+so good at code simplicity.
 
-Before making code more simple lets cover another problem we have yet with
+Before making code more simple let's cover another problem we have yet with
 current hooks implementation. 
 
-How users are going to setup _multiple_ probes? So, the already mentioned
-`httptrace` package has
-[`ClientTrace.compose()`](https://github.com/golang/go/blob/b68fa57c599720d33a2d735782969ce95eabf794/src/net/http/httptrace/trace.go#L175)
-method that merges two trace structs in third one (it is unexported since
-`httptrace.ClientTrace` is used only within contexts, and is not able to be set
-as some struct's field). So calling some probe function from resulting trace
-will call inside appropriate probes from previous traces (if they were set).
+### Composing hooks
 
-So lets first try to do the same manually (and without `reflect`). To do this,
+How users are going to setup _multiple_ probes? So, the already mentioned
+`httptrace` package has [`ClientTrace.compose()`][github:httptrace] method that
+merges two trace structs in third one (it is unexported since it is called only
+within context related functions of `httptrace`). So calling some probe
+function from resulting trace will call inside appropriate probes from previous
+traces (if they were set).
+
+So let's first try to do the same manually (and without `reflect`). To do this,
 we move the `OnPing` hook from `Client` to separate structure `ClientTrace`:
 
 ```go
@@ -229,16 +231,59 @@ func (a ClientTrace) Compose(b ClientTrace) (c ClientTrace) {
 }
 ```
 
-Pretty much code for single hook, right? Lets move forward for now and come
+Pretty much code for single hook, right? Let's move forward for now and come
 back to this later.
 
-One thing that we also may provide to users of our component is context based
-tracing. That is, the one that is exactly the same in `httptrace` package –
-bring user ability to setup not (only) the structure level tracing hooks, but
-also associate hooks with `context.Context` object on some conditions.
-
+Now user can setup or change any instrumenting method independently:
 
 ```go
+package main
+
+import (
+	"log"
+	
+	"some/path/to/lib"
+)
+
+func main() {
+	var trace lib.ClientTrace
+
+	// Logging hooks.
+	trace = trace.Compose(lib.ClientTrace{
+		OnPing: func() func(error) {
+			log.Println("ping start")
+			return func(err error) {
+				log.Println("ping done", err)
+			}
+		},
+	})
+
+	// Some metrics hooks.
+	trace = trace.Compose(lib.ClientTrace{
+		OnPing: func() func(error) {
+			start := time.Now()
+			return func(err error) {
+				metric := stats.Get("ping_latency")
+				metric.Send(time.Since(start))
+			}
+		},
+	})
+
+	c := lib.Client{
+		Trace: trace,
+	}
+}
+```
+
+### Context based tracing
+
+One thing that we also may provide to users of our component is context based
+tracing. That is, the one that is exactly the same as in `httptrace` package –
+the ability to associate hooks with `context.Context` passed to the
+`Client.Request()`.
+
+```go
+package lib
 
 type clientTraceContextKey struct{}
 
@@ -260,22 +305,24 @@ Huh. Looks like now its almost done and we are ready to bring all the best of
 the tracing facilities for users of our component.
 
 But isn't it really tedious to write all that code for every structure we want
-to instrument? Of course you can write some vim's macros for this (which I used
-to do before actually), but lets look at alternatives.
+to instrument? Of course you can write some vim's macros for this (actually I
+used to do them before), but let's look at alternatives.
 
 The good news is that merging hooks and checking them to be nil, as well as
 context specific functions are all quite patterned, so we can generate Go code
-for them without macros or reflection based helpers.
+for them without macros or reflection.
 
 ## github.com/gobwas/gtrace
 
-**gtrace** suggests you to use structures (tagged with `//gtrace:gen`) holding
-all _hooks_ related to your component and generates helper functions around
-them so that you can merge such structures and call the _hooks_ without any
-checks for `nil`. It also can generate context aware helpers to call _hooks_
-associated with context.
+**gtrace** is a command line tool that generated Go code for the tracing
+approach discussed above.
 
-Example of generated code [is here](examples/pinger/main_gtrace.go).
+**gtrace** suggests you to use structures (tagged with `//gtrace:gen`) with
+_hook_ fields and generates helper functions around them, so that you can merge
+such structures and call the _hooks_ without any checks for `nil`. It also can
+generate context aware helpers to call _hooks_ associated with context.
+
+Example of generated code [is here][github:gtrace:example].
 
 So we can drop all the boilerplate code written above and leave just this:
 
@@ -308,13 +355,19 @@ func (c *Client) ping(ctx context.Context) (err error) {
 }
 ```
 
-That's it! **gtrace** takes care of boilerplate code patterns and allows you to
-focus on _trace points_ in your code you wish to make able to be instrumented,
-and API of the hook functions.
+That's it! **gtrace** takes care of boilerplate code and allows you to focus on
+_trace points_ in your code you wish to make able to be instrumented.
 
 Thank you for reading!
 
 ## References
 
 - [github.com/gobwas/gtrace](https://github.com/gobwas/gtrace)
-- [Minimalistic C libraries](https://nullprogram.com/blog/2018/06/10/) by Chris Wellons
+- [Minimalistic C libraries](https://nullprogram.com/blog/2018/06/10/) by Chris
+  Wellons. I read this article long time ago and was inspired by that clear
+  thoughts on how libraries could be organized.
+
+[wikipedia:srp]:         https://en.wikipedia.org/wiki/Single-responsibility_principle
+[go:httptrace]:          https://golang.org/pkg/net/http/httptrace
+[github:httptrace]:      https://github.com/golang/go/blob/b68fa57c599720d33a2d735782969ce95eabf794/src/net/http/httptrace/trace.go#L175
+[github:gtrace:example]: https://github.com/gobwas/gtrace/blob/216866e1680bb30fb108f26ee926c471f0920239/examples/pinger/main_gtrace.go
