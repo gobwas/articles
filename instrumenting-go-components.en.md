@@ -7,7 +7,7 @@ description: ""
 
 ## Introduction
 
-In this article I will share my thoughts on how Go programms should be
+In this article I will share my thoughts on how Go programs should be
 instrumented in a clean and flexible way.
 
 ## TL;DR
@@ -89,7 +89,7 @@ func (c *Client) ping(ctx context.Context) (err error) {
 }
 ```
 
-If we continue to add instrumentation methods to our `Client`, we'll realise
+If we continue to add instrumentation methods to our `Client`, we'll realize
 soon that most of its code is related to instrumentation and not to the main
 functionality of the `Client` (which was just a single line with `doPing()`
 call).
@@ -97,7 +97,7 @@ call).
 Number of non-coherent (non-related to the main purpose of our `Client`) lines
 of code is just a first problem with that approach.
 
-What if during operations of your program you realise that the metric name, for
+What if during operations of your program you realize that the metric name, for
 example, is wrong and you should rename it? Or you must use some different
 library for logging? 
 
@@ -108,12 +108,12 @@ This means that you are going to change code every time when something not
 related to component's _functionality_ changes. In other words such design does
 violate the [SRP principle][wikipedia:srp].
 
-What if you share your code across multiple programms? What if you even don't
-control the consumers of your code at all (and to be honest I suggest to treat
-_every_ package as it reused by unknown number of programms, even if in reality
+What if you share your code across multiple programs? What if you even don't
+control the consumers of your code at all (and to be honest I suggest treating
+_every_ package as it reused by unknown number of programs, even if in reality
 it is only one that yours).
 
-All of this questions point to a design mistake that we made earlier: 
+All of these questions point to a design mistake that we made earlier:
 
 > We must not assume which instrumentation methods user will want to use with
 > our component.
@@ -125,7 +125,7 @@ which user of your code can then initialize with some function (aka _probe_)
 during runtime. 
 
 This still will add some extra code lines for sure, but will also bring the
-flexibility to users to measure our componenet's runtime with any appropriate
+flexibility to users to measure our component's runtime with any appropriate
 method.
 
 Such method is used for example by the standard library's
@@ -156,7 +156,7 @@ func (c *Client) ping(ctx context.Context) (err error) {
 }
 ```
 
-Looks neat, but only unless we realise that both `OnPing` hook and callback it
+Looks neat, but only unless we realize that both `OnPing` hook and callback it
 returns might be nil:
 
 ```go
@@ -176,14 +176,14 @@ func (c *Client) ping(ctx context.Context) (err error) {
 Now it is correct and is still good at flexibility and SRP principle, but not
 so good at code simplicity.
 
-Before making code more simple let's cover another problem we have yet with
+Before making code simpler let's cover another problem we have yet with
 current hooks implementation. 
 
 ### Composing hooks
 
-How users are going to setup _multiple_ probes? So, the already mentioned
+How users are going to set up _multiple_ probes? So, the already mentioned
 `httptrace` package has [`ClientTrace.compose()`][github:httptrace] method that
-merges two trace structs in third one (it is unexported since it is called only
+merges two trace structs in third one (it is non-exported since it is called only
 within context related functions of `httptrace`). So calling some probe
 function from resulting trace will call inside appropriate probes from previous
 traces (if they were set).
@@ -234,7 +234,7 @@ func (a ClientTrace) Compose(b ClientTrace) (c ClientTrace) {
 Pretty much code for single hook, right? Let's move forward for now and come
 back to this later.
 
-Now user can setup or change any instrumenting method independently:
+Now user can set up or change any instrumenting method independently:
 
 ```go
 package main
@@ -301,11 +301,11 @@ func WithClientTrace(ctx context.Context, t ClientTrace) context.Context {
 }
 ```
 
-Huh. Looks like now its almost done and we are ready to bring all the best of
+Huh. Looks like now it's almost done, and we are ready to bring all the best of
 the tracing facilities for users of our component.
 
 But isn't it really tedious to write all that code for every structure we want
-to instrument? Of course you can write some vim's macros for this (actually I
+to instrument? Of course, you can write some vim's macros for this (actually I
 used to do them before), but let's look at alternatives.
 
 The good news is that merging hooks and checking them to be nil, as well as
@@ -343,7 +343,7 @@ type ClientTrace struct {
 }
 ```
 
-After run of `go generate` we will be able to use the generated **unexported**
+After run of `go generate` we will be able to use the generated **non-exported**
 versions of trace hooks like so:
 
 ```go
