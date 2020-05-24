@@ -107,9 +107,9 @@ library for logging?
 With approach above you will need to go to the implementation of `Client` (and
 other similar components as well) and change it.
 
-This means that you are going to change code every time when something not
-related to component's _functionality_ changes. In other words such design does
-violate the [SRP principle][wikipedia:srp].
+This means that you are going to change code every time when something that is
+not related to component's _main functionality_ changes. In other words such
+design does violate the [SRP principle][wikipedia:srp].
 
 What if you share your code across multiple programs? What if you even don't
 control the consumers of your code at all (and to be honest I suggest treating
@@ -131,13 +131,13 @@ This still will add some extra code lines for sure, but will also bring the
 flexibility to users to measure our component's runtime with any appropriate
 method.
 
-Such method is used for example by the standard library's
+Such approach is used for example by the standard library's
 [`httptrace`][go:httptrace] package. 
 
-Let's provide almost the same facility, but with one change. Instead of
-providing `OnPingStart()` and `OnPingDone()` _hooks_, let's introduce a single
+Let's provide almost the same mechanics, but with one change. Instead of
+providing `OnPingStart()` and `OnPingDone()` hooks, let's introduce a single
 `OnPing()` hook which will be called right before ping and will return a
-callback which will be called right after ping. This way we can store some
+callback, which will be called right after ping. This way we can store some
 variables in closure, to access them when ping completes (e.g. to calculate
 ping latency).
 
@@ -186,13 +186,12 @@ current hooks implementation.
 
 How users are going to set up _multiple_ probes? So, the already mentioned
 `httptrace` package has [`ClientTrace.compose()`][github:httptrace] method that
-merges two trace structs in third one (it is non-exported since it is called only
-within context related functions of `httptrace`). So calling some probe
-function from resulting trace will call inside appropriate probes from previous
-traces (if they were set).
+merges two trace structs in third one. So every probe function from resulting
+trace will call appropriate probes from previous traces (if they were set).
 
 So let's first try to do the same manually (and without `reflect`). To do this,
-we move the `OnPing` hook from `Client` to separate structure `ClientTrace`:
+we move the `OnPing` hook from the `Client` to separate structure
+`ClientTrace`:
 
 ```go
 package lib
@@ -220,11 +219,14 @@ func (a ClientTrace) Compose(b ClientTrace) (c ClientTrace) {
 		c.OnPing = func() func(error) {
 			doneA := a.OnPing()
 			doneB := b.OnPing() 
-			return func(err error) {
-				if doneA != nil {
+			switch {
+			case doneA == nil:
+				return doneB
+			case doneB == nil:
+				return doneA
+			default:
+				return func(err error) {
 					doneA(err)
-				}
-				if doneB != nil {
 					doneB(err)
 				}
 			}
@@ -237,7 +239,7 @@ func (a ClientTrace) Compose(b ClientTrace) (c ClientTrace) {
 Pretty much code for single hook, right? Let's move forward for now and come
 back to this later.
 
-Now user can set up or change any instrumenting method independently:
+Now user can set up or change any instrumentation method independently:
 
 ```go
 package main
@@ -311,19 +313,18 @@ But isn't it really tedious to write all that code for every structure we want
 to instrument? Of course, you can write some vim's macros for this (actually I
 used to do them before), but let's look at alternatives.
 
-The good news is that merging hooks and checking them to be nil, as well as
-context specific functions are all quite patterned, so we can generate Go code
-for them without macros or reflection.
+The good news is that merging hooks and checking for nil, as well as context
+specific functions are all quite patterned, so we can generate Go code for them
+without macros or reflection.
 
 ## github.com/gobwas/gtrace
 
-**gtrace** is a command line tool that generated Go code for the tracing
-approach discussed above.
-
-**gtrace** suggests you to use structures (tagged with `//gtrace:gen`) with
-_hook_ fields and generates helper functions around them, so that you can merge
-such structures and call the _hooks_ without any checks for `nil`. It also can
-generate context aware helpers to call _hooks_ associated with context.
+**gtrace** is a command line tool that generates Go code for the tracing
+approach discussed above. It suggests you to use structures (tagged with
+`//gtrace:gen`) with hook fields and generates helper functions around them, so
+that you can merge such structures and call the hooks without any checks for
+nil. It also can generate context aware helpers to call hooks associated with
+context.
 
 Example of generated code [is here][github:gtrace:example].
 
@@ -334,22 +335,17 @@ package lib
 
 //go:generate gtrace
 
-type Client struct {
-	Trace ClientTrace
-	conn net.Conn
-}
-
 //gtrace:gen
 //gtrace:set context
 type ClientTrace struct {
 	OnPing func() func(error)
 }
-```
 
-After run of `go generate` we will be able to use the generated **non-exported**
-versions of trace hooks like so:
+type Client struct {
+	Trace ClientTrace
+	conn net.Conn
+}
 
-```go
 func (c *Client) ping(ctx context.Context) (err error) {
 	done := c.Trace.onPing(ctx)
 	err = doPing(ctx, c.conn)
@@ -358,8 +354,11 @@ func (c *Client) ping(ctx context.Context) (err error) {
 }
 ```
 
+After run of `go generate` we will be able to use the generated **non-exported**
+versions of trace hooks we defined in `ClientTrace`.
+
 That's it! **gtrace** takes care of boilerplate code and allows you to focus on
-_trace points_ in your code you wish to make able to be instrumented.
+_trace points_ you wish to make able to be instrumented by users.
 
 Thank you for reading!
 
