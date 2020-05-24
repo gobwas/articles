@@ -21,6 +21,9 @@ some _trace points_ of the code that can be instrumented by a user.
 
 That is, logging and metrics collection are subsets of the **tracing**.
 
+There is a code generation tool called [gtrace][gtrace] that generates
+boilerplate code for the tracing.
+
 ## The problem
 
 Let's assume that we have some package called `lib` and some `lib.Client`
@@ -363,11 +366,12 @@ Thank you for reading!
 
 ## References
 
-- [github.com/gobwas/gtrace](https://github.com/gobwas/gtrace)
+- [github.com/gobwas/gtrace][gtrace]
 - [Minimalistic C libraries](https://nullprogram.com/blog/2018/06/10/) by Chris
   Wellons. I read this article long time ago and was inspired by that clear
   thoughts on how libraries could be organized.
 
+[gtrace]:                https://github.com/gobwas/gtrace
 [wikipedia:srp]:         https://en.wikipedia.org/wiki/Single-responsibility_principle
 [go:httptrace]:          https://golang.org/pkg/net/http/httptrace
 [github:httptrace]:      https://github.com/golang/go/blob/b68fa57c599720d33a2d735782969ce95eabf794/src/net/http/httptrace/trace.go#L175
