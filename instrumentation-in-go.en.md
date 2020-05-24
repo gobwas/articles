@@ -138,8 +138,8 @@ Let's provide almost the same mechanics, but with one change. Instead of
 providing `OnPingStart()` and `OnPingDone()` hooks, let's introduce a single
 `OnPing()` hook which will be called right before ping and will return a
 callback, which will be called right after ping. This way we can store some
-variables in closure, to access them when ping completes (e.g. to calculate
-ping latency).
+variables in closure to access them when ping completes (e.g. to calculate ping
+latency).
 
 Let's look how our `Client` will change with this approach:
 
@@ -282,10 +282,9 @@ func main() {
 
 ### Context based tracing
 
-One thing that we also may provide to users of our component is context based
-tracing. That is, the one that is exactly the same as in `httptrace` package –
-the ability to associate hooks with `context.Context` passed to the
-`Client.Request()`.
+One thing that we also may provide users is context based tracing. That is, the
+one that is exactly the same as in `httptrace` package – the ability to
+associate hooks with `context.Context` passed to the `Client.Request()`.
 
 ```go
 package lib
