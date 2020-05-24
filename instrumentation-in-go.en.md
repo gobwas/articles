@@ -6,7 +6,7 @@ image: instrumentation-in-go.jpg
 imageWidth: 600
 description: "Here is my thoughts on how Go programs should be instrumented in a clean and flexible way."
 ---
-{{< img src="instrumentation-in-go.jpg" width="600" alt="Gopher holding big flag and standing near retro computer" >}}
+{{< img src="instrumentation-in-go.jpg" width="600" alt="Gopher looking at reader through magnifying glass" >}}
 
 ## Introduction
 
