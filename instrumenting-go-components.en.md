@@ -7,13 +7,13 @@ description: ""
 
 ## Introduction
 
-In this article I will share my thoughts on how Go programms should be
+In this article I will share my thoughts on how Go programs should be
 instrumented in a clean and flexible way.
 
 ## TL;DR
 
 Logging, metrics collection and anything that is not related to main
-functionality of some code, must not appear within that code. Instead, define
+functionality of some code, must not appear within that code. Instead, we can define
 some _trace points_ of the code that can be instrumented by a user.
 
 That is, logging and metrics collection are subsets of the **tracing**.
@@ -22,7 +22,7 @@ That is, logging and metrics collection are subsets of the **tracing**.
 
 Let's assume that we have some package called `lib` and some `lib.Client`
 structure which pings its underlying connection every time while making some
-request.
+requests.
 
 ```go
 package lib
@@ -110,7 +110,7 @@ violate the [SRP principle][wikipedia:srp].
 
 What if you share your code across multiple programms? What if you even don't
 control the consumers of your code at all (and to be honest I suggest to treat
-_every_ package as it reused by unknown number of programms, even if in reality
+_every_ package as it is reused by unknown number of programs, even if in reality
 it is only one that yours).
 
 All of this questions point to a design mistake that we made earlier: 
@@ -125,7 +125,7 @@ which user of your code can then initialize with some function (aka _probe_)
 during runtime. 
 
 This still will add some extra code lines for sure, but will also bring the
-flexibility to users to measure our componenet's runtime with any appropriate
+flexibility to users to measure our component's runtime with any appropriate
 method.
 
 Such method is used for example by the standard library's
@@ -183,7 +183,7 @@ current hooks implementation.
 
 How users are going to setup _multiple_ probes? So, the already mentioned
 `httptrace` package has [`ClientTrace.compose()`][github:httptrace] method that
-merges two trace structs in third one (it is unexported since it is called only
+merges two trace structs in the third one (it is unexported since it is called only
 within context related functions of `httptrace`). So calling some probe
 function from resulting trace will call inside appropriate probes from previous
 traces (if they were set).
