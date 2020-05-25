@@ -168,8 +168,8 @@ returns might be nil:
 ```go
 func (c *Client) ping(ctx context.Context) (err error) {
 	var done func(error)
-	if fn := c.OnPing(); fn != nil {
-		done = c.OnPing()
+	if fn := c.OnPing; fn != nil {
+		done = fn()
 	}
 	err = doPing(ctx, c.conn)
 	if done != nil {
