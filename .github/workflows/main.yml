@@ -8,4 +8,4 @@ jobs:
     steps:
     - name: Dispatch event on site repo
       run: |
-        curl -XPOST -u "${{ secrets.ACCESS_USERNAME}}:${{secrets.ACCESS_TOKEN}}" -H "Content-Type: application/json" https://api.github.com/repos/gobwas/site/dispatches --data '{"event_type": "push"}'
+        curl -XPOST -u "${{ secrets.ACCESS_USERNAME}}:${{secrets.ACCESS_TOKEN}}" -H "Content-Type: application/json" https://api.github.com/repos/gobwas/site/dispatches --data '{"event_type": "articles-update"}'
