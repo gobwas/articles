@@ -163,7 +163,7 @@ func (c *Client) ping(ctx context.Context) (err error) {
 ```
 
 Looks neat, but only unless we realize that both `OnPing` hook and callback it
-returns might be nil:
+returns might be `nil`:
 
 ```go
 func (c *Client) ping(ctx context.Context) (err error) {
@@ -287,7 +287,7 @@ func main() {
 
 One thing that we also may provide users is context based tracing. That is, the
 one that is exactly the same as in `httptrace` package – the ability to
-associate hooks with `context.Context` passed to the `Client.Request()`.
+associate hooks with `context.Context` passed to the `Client.Request()`:
 
 ```go
 package lib
@@ -312,10 +312,10 @@ Huh. Looks like now it's almost done, and we are ready to bring all the best of
 the tracing facilities for users of our component.
 
 But isn't it really tedious to write all that code for every structure we want
-to instrument? Of course, you can write some vim's macros for this (actually I
+to instrument? Of course, you can write some Vim's macros for this (actually I
 used to do them before), but let's look at alternatives.
 
-The good news is that merging hooks and checking for nil, as well as context
+The good news is that merging hooks and checking for `nil`, as well as context
 specific functions are all quite patterned, so we can generate Go code for them
 without macros or reflection.
 
@@ -325,7 +325,7 @@ without macros or reflection.
 approach discussed above. It suggests you to use structures (tagged with
 `//gtrace:gen`) with hook fields and generates helper functions around them, so
 that you can merge such structures and call the hooks without any checks for
-nil. It also can generate context aware helpers to call hooks associated with
+`nil`. It also can generate context aware helpers to call hooks associated with
 context.
 
 Example of generated code [is here][github:gtrace:example].
