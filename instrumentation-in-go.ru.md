@@ -4,7 +4,7 @@ date: 2020-05-31T21:23:00+03:00
 draft: false
 image: instrumentation-in-go.jpg
 imageWidth: 600
-description: "В этой статье я хотел бы поделиться гибким способом профилирования программ на Go."
+description: "В этой статье я рассказываю о гибком способе профилирования программ на Go."
 ---
 {{< img src="instrumentation-in-go.jpg" width="600" alt="Гофер смотрит на читателя через лупу" >}}
 
