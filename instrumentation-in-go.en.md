@@ -316,8 +316,8 @@ to instrument? Of course, you can write some Vim's macros for this (actually I
 used to do them before), but let's look at alternatives.
 
 The good news is that merging hooks and checking for `nil`, as well as context
-specific functions are all quite patterned, so we can generate Go code for them
-without macros or reflection.
+specific functions are all quite patterned, so we can [generate][go:generate]
+Go code for them without macros or reflection.
 
 ## github.com/gobwas/gtrace
 
@@ -374,5 +374,6 @@ Thank you for reading!
 [gtrace]:                https://github.com/gobwas/gtrace
 [wikipedia:srp]:         https://en.wikipedia.org/wiki/Single-responsibility_principle
 [go:httptrace]:          https://golang.org/pkg/net/http/httptrace
+[go:generate]:           https://blog.golang.org/generate
 [github:httptrace]:      https://github.com/golang/go/blob/b68fa57c599720d33a2d735782969ce95eabf794/src/net/http/httptrace/trace.go#L175
 [github:gtrace:example]: https://github.com/gobwas/gtrace/blob/216866e1680bb30fb108f26ee926c471f0920239/examples/pinger/main_gtrace.go
