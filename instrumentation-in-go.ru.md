@@ -1,7 +1,7 @@
 ---
 title: "Средства измерения программ на Go"
-date: 2020-05-27T22:16:54+03:00
-draft: true
+date: 2020-05-31T21:23:00+03:00
+draft: false
 image: instrumentation-in-go.jpg
 imageWidth: 600
 description: "Гибкий подход к трассировке программ на Go."
