@@ -1,5 +1,5 @@
 ---
-title: "Generic Concurrency in Go"
+title: "Generic Concurrency в Go"
 date: 2024-05-23T18:00:00+00:00
 draft: false
 image: generic-concurrency-in-go.jpg
