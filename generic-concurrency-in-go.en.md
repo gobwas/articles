@@ -51,7 +51,6 @@ An example use of such function would look like this:
 transform([]int{1, 2, 3}, func(n int) int {
     return n * n
 })
-
 ```
 
 Now lets assume we want to map integers to strings. That's easy -- we can define `transform()` _just slightly_ different:
@@ -82,7 +81,7 @@ transform([]int{1, 2, 3}, func(n int) bool {
 })
 ```
 
-_Generalising_ the corrections of `transform()` we've made above for each use case, we can say that **regardless** of the types it operates on, it does exactly the same thing over and over again. If we were to generate the code for each type involved, we could use a template that would look like this:
+_Generalising_ the corrections of `transform()` we've made above for each use case, we can say that **regardless** of the types it operates on, it does exactly the same thing over and over again. If we were to generate the code for each type involved using `text/template` templates, we could do it like this:
 
 ```go
 func transform_{{ .A }}_{{ .B }}([]{{ .A }}, func({{ .A }}) {{ .B }}) []{{ .B }}
@@ -114,7 +113,7 @@ func transform[A, B any](xs []A, f func(A) B) []B {
 ```
 {{</details>}}
 
-So we can use it now for any input and output types (assuming we have `func square(int) int` and `isEven(int) bool` defined as we used them above somewhere in the package):
+So we can use it now for any input and output types (assuming we have `square(int) int` and `isEven(int) bool` defined somewhere in the package):
 
 ```go
 transform([]int{1, 2, 3}, square)       // [1, 4, 9]
