@@ -344,9 +344,6 @@ I wish this was a part of the Go standard library.
 
 Initially I wanted to have this first sentence to be the only content for this conclusion section, but probably at least a few words still should be said why. I believe such general purpose utilities can be much better conveyed and accepted by projects if majority of the community agrees on how the utilities designed and built. Of course we can have some libraries solving similar problems, but in my opinion the more different libraries we have the more disagreement in the community we _may_ get about what, when and how to use them. For some cases there is nothing wrong to have widely different approaches and implementations, but for some cases it can also mean not having a complete solution at all. Very often libraries initially get born as a much more specific solution than needed to be widely adopted, and to be really general purpose solution the design, API and then implementation should be well discussed _way before_ the actual work takes place. This is how OSS foundations solve similar problems or Go team in case of Go. Having something for such concurrent/asynchronous processing feels to be a natural evolvement after getting generic slices package and later coroutines and iterators.
 
-Many thanks for your attention.
-This article was really hard to write and took a long time to polish. I hope it was helpful!
-
 ## References
 
 - [Parallel Collections in Scala][scala-par]
