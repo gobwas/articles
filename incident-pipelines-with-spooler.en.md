@@ -17,8 +17,8 @@ pipelines with clear consistency and durability properties.
 The project we're going to build is small, though very much in line with the
 trends of today: LLMs are involved.
 
-~We'll build a distributed agentic AI swarm that would perform multi-step
-actions with limited or no human supervision to investigate...~
+~~We'll build a distributed agentic AI swarm that would perform multi-step
+actions with limited or no human supervision to investigate...~~
 
 In fact, we'll build a simple program that spins up and shuts down workers
 depending on a queue backlog. The workers would pull incidents from a queue and
